@@ -387,7 +387,7 @@ def pts_edit(id):
                 INSERT INTO history_pts (user_id_defined, aktivitas, created_at, updated_at)
                 VALUES (%s, %s, NOW(), NOW())
             """
-            history_params = (session['id_organization'], 'update data wisuda')
+            history_params = (session['id_organization'], 'Update Data Wisuda')
             execute_query(history_query, history_params)
             
             flash('Data berhasil diperbarui!', 'success')
@@ -410,8 +410,21 @@ def pts_edit(id):
         
         return render_template('user_pts/pts_edit.html', data=data)
 
-def allowed_file(filename, allowed_extensions):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+@app.route('/pts_history')
+@login_required
+@pts_required
+def pts_history():
+    title = "History PTS"
+    try:
+        user_defined_id = session.get('id_organization')
+        request_query = f"SELECT * FROM history_pts WHERE user_id_defined = '{user_defined_id}';"
+        request_data = execute_query(request_query)
+        print(request_data)
+
+    except Exception as e:
+        print(f"An error occurred while fetching data: {str(e)}")  
+    return render_template('user_pts/pts_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
+
 
 
 if __name__ == '__main__':
