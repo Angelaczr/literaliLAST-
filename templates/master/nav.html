@@ -16,6 +16,18 @@
       </a>
     </li>
     <li class="dropdown">
+      <a href="{{url_for('admin_verifikasi')}}">
+        <i class="uil uil-upload"></i>
+        <span class="link-name">Upload Data PDDIKTI</span>
+      </a>
+    </li>
+    <li class="dropdown">
+      <a href="{{url_for('admin_history')}}">
+        <i class="uil uil-shield-check"></i>
+        <span class="link-name">Riwayat Pengguna Admin</span>
+      </a>
+    </li>
+    <!-- <li class="dropdown">
       <a href="#" class="dropdown-toggle">
         <i class="uil uil-files-landscapes"></i>
         <span class="link-name">Manajemen Data</span>
@@ -28,21 +40,21 @@
           >
         </li>
       </ul>
-    </li>
-    <li class="dropdown">
+    </li> -->
+    <!-- <li class="dropdown">
       <a href="#" class="dropdown-toggle">
         <i class="uil uil-chart"></i>
         <span class="link-name">Manajemen User</span>
       </a>
       <ul class="dropdown-menu" style="display: none">
         <li class="mb-2">
-          <a href=""
+          <a href="{{url_for('admin_history')}}"
             ><i class="uil uil-shield-check"></i
             ><span class="link-name px-2"> Riwayat Pengguna Admin</span></a
           >
         </li>
       </ul>
-    </li>
+    </li> -->
   </ul>
   {% elif session['user_role'] == 'PTS' %}
   <ul class="nav-links m-0 p-0">
@@ -60,7 +72,7 @@
     </li>
     <li class="dropdown">
       <a href="{{url_for('pts_history')}}">
-        <i class="uil uil-upload"></i>
+        <i class="uil uil-history"></i>
         <span class="link-name">History</span>
       </a>
     </li>
