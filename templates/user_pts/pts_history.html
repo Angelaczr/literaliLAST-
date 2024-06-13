@@ -19,7 +19,7 @@
 
 <div class="activity mx-3">
   <div class="title mt-2">
-    <i class="uil uil-clock-three"></i>
+    <i class="uil uil-history"></i>
     <span class="text">Halaman History</span>
   </div>
   <div class="card">
@@ -52,16 +52,14 @@
         </thead>
         <tbody>
           {% if request_data %}
-            {% set counter = 1 %}
             {% for row in request_data %}
             <tr>
-              <td>{{ counter }}</td>
+              <td>{{ loop.index }}</td>
               <td>{{ row[2] }}</td>
               <td>{{ row[3].strftime('%Y-%m-%d') }}</td>
               <td>{{ row[3].strftime('%H:%M:%S') }}</td>
        
             </tr>
-            {% set counter = counter + 1 %}
             {% endfor %}
           {% else %}
           <tr>

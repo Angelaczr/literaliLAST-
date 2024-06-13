@@ -407,8 +407,17 @@ def pts_edit(id):
         
         # Assuming `request_data` contains a list with a single tuple
         data = request_data[0]
+        # print("kosong",data)
+        # Assuming the Excel file path is in `data[14]`
+        excel_path = data[6]
+        if excel_path and os.path.exists(excel_path):
+            df = pd.read_excel(excel_path)
+            excel_data = df.to_dict('records')
+        else:
+            excel_data = None  
+        # Handle case where Excel file is not available or path is invalid
         
-        return render_template('user_pts/pts_edit.html', data=data)
+        return render_template('user_pts/pts_edit.html', data=data, user_name=session['user_name'], excel_data=excel_data)
 
 @app.route('/pts_history')
 @login_required
@@ -426,6 +435,27 @@ def pts_history():
     return render_template('user_pts/pts_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
 
 
+# ADMIN ROUTE
+@app.route('/admin_dashboard')
+@login_required
+@admin_required
+def admin_dashboard():
+    title = "Dashboard"
+    return render_template('user_admin/admin_dashboard.html', user_name=session['user_name'], title=title)
+
+@app.route('/admin_verifikasi', methods=['GET'])
+@login_required
+@admin_required
+def admin_verifikasi():
+    title = "Verifikasi Admin"
+    try:
+        request_query = "SELECT * FROM request;"
+        request_data = execute_query(request_query)
+        print(request_data)
+
+    except Exception as e:
+        print(f"An error occurred while fetching data: {str(e)}")  
+    return render_template('user_admin/admin_verifikasi.html', user_name=session.get('user_name'), title=title, request_data=request_data)
 
 if __name__ == '__main__':
     app.run(debug=True)

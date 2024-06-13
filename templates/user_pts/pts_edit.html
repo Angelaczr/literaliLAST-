@@ -19,7 +19,11 @@
 
 <div class="container">
   <div class="card my-3">
-    <h2>Edit Data</h2>
+    <div class="title m-0">
+      <i class="uil uil-edit"></i>
+      <span class="text">Edit Data</span>
+    </div>
+    <!-- <h2>Edit Data</h2> -->
     <form
       action="{{ url_for('pts_edit', id=data[0]) }}"
       method="POST"
@@ -28,7 +32,7 @@
       <div class="container mt-3">
         <div class="row mb-3">
           <!-- Tanggal Wisuda -->
-          <div class="col-md-6">
+          <div class="col-md-12">
             <div class="form-group">
               <label for="tanggalWisuda">Tanggal Wisuda:</label>
               <input
@@ -42,7 +46,7 @@
           </div>
         </div>
         <div class="row mb-3">
-          <div class="col-md-6">
+          <div class="col-md-12">
             <div class="form-group">
               <label for="jumlahWisudawan">Jumlah Wisudawan:</label>
               <input
@@ -57,7 +61,7 @@
         </div>
         <!-- Surat Permohonan -->
         <div class="row mb-3">
-          <div class="col-md-6">
+          <div class="col-md-12">
             <label for="filePdf" class="form-label">Surat Permohonan</label>
             <input
               type="file"
@@ -70,7 +74,7 @@
             <div id="pdfPreview" class="mt-2">
               <iframe
                 id="pdfIframe"
-                src="{{ url_for('static', filename='uploads/' ~ data[8]) }}"
+                src="/{{ data[8] }}"
                 width="100%"
                 height="500px"
               ></iframe>
@@ -78,7 +82,7 @@
           </div>
         </div>
         <div class="row mb-3">
-          <div class="col-md-6">
+          <div class="col-md-12">
             <label for="fileExcel" class="form-label">File Excel Wisuda</label>
             <input
               type="file"
@@ -91,7 +95,30 @@
             <div
               id="excelPreview"
               class="scrollable-table excelPreview mt-2"
-            ></div>
+            >
+            {% if excel_data %}
+              <table>
+                <thead>
+                  <tr>
+                    {% for column in excel_data[0].keys() %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in excel_data %}
+                  <tr>
+                    {% for value in row.values() %}
+                    <td>{{ value }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p>No data available to display.</p>
+            {% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -109,13 +136,32 @@
 
 <script>
   function previewPdf() {
-    const file = document.getElementById("filePdf").files[0];
-    const pdfIframe = document.getElementById("pdfIframe");
+    const pdfIframe = document.getElementById("pdfPreview");
+    const fileInput = document.getElementById("filePdf");
+    const file = fileInput.files[0];
 
     if (file) {
-      const fileURL = URL.createObjectURL(file);
-      pdfIframe.src = fileURL;
+      const fileReader = new FileReader();
+      fileReader.onload = function (e) {
+        const iframe = document.createElement("iframe");
+        iframe.src = e.target.result;
+        iframe.width = "100%";
+        iframe.height = "500px";
+        pdfIframe.innerHTML = "";
+        pdfIframe.appendChild(iframe);
+      };
+      fileReader.readAsDataURL(file);
+    } else {
+      pdfIframe.innerHTML = "No PDF file selected";
     }
+    
+    // const file = document.getElementById("filePdf").files[0];
+    // const pdfIframe = document.getElementById("pdfIframe");
+
+    // if (file) {
+    //   const fileURL = URL.createObjectURL(file);
+    //   pdfIframe.src = fileURL;
+    // }
   }
 
   function previewExcel() {
