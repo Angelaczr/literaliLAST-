@@ -1,0 +1,42 @@
+{% extends 'master/main.html' %} {% block content %}
+<div class="activity">
+    <div class="title">
+      <i class="uil uil-clock-three"></i>
+      <span class="text">Recent Activity</span>
+    </div>
+  
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Joined</th>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>Prem Shahi</td>
+            <td>premshahi@gmail.com</td>
+            <td>2022-02-12</td>
+            <td>New</td>
+            <td>Liked</td>
+            <td>
+              <button class="btn btn-primary">Edit</button>
+              <button class="btn btn-danger">Delete</button>
+            </td>
+          </tr>
+          <!-- Add more rows as needed -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+
+
+{% endblock content %}

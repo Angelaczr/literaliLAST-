@@ -1,0 +1,114 @@
+<div class="logo-name">
+  <div class="logo-image">
+    <img src="{{ url_for('static', filename='assets/img/logo.png') }}" alt="" />
+  </div>
+
+  <span class="logo_name" href="">LLDIKTI7</span>
+</div>
+
+<div class="menu-items">
+  {% if session['user_role'] == 'admin' %}
+  <ul class="nav-links m-0 p-0">
+    <li>
+      <a href="{{ url_for('admin_dashboard') }}">
+        <i class="uil uil-estate"></i>
+        <span class="link-name">Dashboard Admin</span>
+      </a>
+    </li>
+    <li class="dropdown">
+      <a href="#" class="dropdown-toggle">
+        <i class="uil uil-files-landscapes"></i>
+        <span class="link-name">Manajemen Data</span>
+      </a>
+      <ul class="dropdown-menu" style="display: none">
+        <li>
+          <a href="{{url_for('admin_verifikasi')}}"
+            ><i class="uil uil-upload"></i
+            ><span class="link-name px-2">Upload Data PDDIKTI</span></a
+          >
+        </li>
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a href="#" class="dropdown-toggle">
+        <i class="uil uil-chart"></i>
+        <span class="link-name">Manajemen User</span>
+      </a>
+      <ul class="dropdown-menu" style="display: none">
+        <li class="mb-2">
+          <a href=""
+            ><i class="uil uil-shield-check"></i
+            ><span class="link-name px-2"> Riwayat Pengguna Admin</span></a
+          >
+        </li>
+      </ul>
+    </li>
+  </ul>
+  {% elif session['user_role'] == 'PTS' %}
+  <ul class="nav-links m-0 p-0">
+    <li>
+      <a href="{{ url_for('pts_dashboard') }}">
+        <i class="uil uil-estate"></i>
+        <span class="link-name">Dashboard PTS</span>
+      </a>
+    </li>
+    <li class="dropdown">
+      <a href="{{url_for('pts_verifikasi')}}">
+        <i class="uil uil-upload"></i>
+        <span class="link-name">Verifikasi Wisuda</span>
+      </a>
+    </li>
+    <li class="dropdown">
+      <a href="">
+        <i class="uil uil-upload"></i>
+        <span class="link-name">History</span>
+      </a>
+    </li>
+  </ul>
+  {% endif %}
+  <ul class="logout-mode m-0 p-0">
+    <li>
+      <a href="{{ url_for('logout') }}">
+        <i class="uil uil-signout"></i>
+        <span class="link-name">Logout</span>
+      </a>
+    </li>
+    <li class="mode">
+      <a href="#">
+        <i class="uil uil-moon"></i>
+        <span class="link-name">Dark Mode</span>
+      </a>
+      <div class="mode-toggle">
+        <span class="switch"></span>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<script src="{{ url_for('static', filename='assets/js/admin/jquery-3.3.1.min.js') }}"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<script>
+  $(document).ready(function () {
+    // Tambahkan fungsi dropdown pada item dropdown
+    $(".dropdown-toggle").click(function (e) {
+      e.preventDefault();
+      var nextDropdownMenu = $(this).next(".dropdown-menu");
+      // Slide up all dropdown menus
+      $(".dropdown-menu").not(nextDropdownMenu).slideUp();
+      // Toggle the next dropdown menu
+      nextDropdownMenu.slideToggle();
+    });
+
+    // Tutup dropdown saat klik di luar dropdown
+    $(document).click(function (e) {
+      var target = e.target;
+      if (
+        !$(target).is(".dropdown-toggle") &&
+        !$(target).parents().is(".dropdown-toggle")
+      ) {
+        $(".dropdown-menu").slideUp();
+      }
+    });
+  });
+</script>

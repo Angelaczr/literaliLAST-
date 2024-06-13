@@ -1,0 +1,57 @@
+{% extends 'master/main.html' %} {% block content %}
+
+<!-- Begin alerts -->                
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<script>
+
+    Swal.fire({
+
+        title:"{{ category.title() }}!",
+        // success , error , warning ,info
+
+        text: "{{ message }}",
+        // Custom message flashed from your flask routes
+
+        icon: "{{ category }}" == "danger" ? "error" : "{{ category }}"
+        // success , error , warning ,info
+
+    })
+
+</script>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- End alerts -->
+
+<div class="overview mx-3">
+    <div class="title mt-2">
+        <i class="uil uil-tachometer-fast-alt"></i>
+        <span class="text">Dashboard</span>
+    </div>
+
+    <div class="boxes">
+        <div class="box box1">
+            <i class="uil uil-thumbs-up"></i>
+            <span class="text">Total Likes</span>
+            <span class="number">50,120</span>
+        </div>
+        <div class="box box2">
+            <i class="uil uil-comments"></i>
+            <span class="text">Comments</span>
+            <span class="number">20,120</span>
+        </div>
+        <div class="box box3">
+            <i class="uil uil-share"></i>
+            <span class="text">Total Share</span>
+            <span class="number">10,120</span>
+        </div>
+    </div>
+</div>
+
+
+  {% endblock content %}
+
+</div>

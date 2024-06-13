@@ -1,0 +1,162 @@
+{% extends 'master/main.html' %} {% block content %}
+
+<!-- Begin alerts -->
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%} {% for category, message in messages %}
+<script>
+  Swal.fire({
+    title: "{{ category.title() }}!",
+    text: "{{ message }}",
+    icon: "{{ category }}" == "danger" ? "error" : "{{ category }}",
+    showConfirmButton: true,
+  }).then((result) => {
+    // Redirect to the same page
+    window.location.href = window.location.href;
+  });
+</script>
+{% endfor %} {% endif %} {% endwith %}
+<!-- End alerts -->
+
+<div class="container">
+  <div class="card my-3">
+    <h2>Edit Data</h2>
+    <form
+      action="{{ url_for('pts_edit', id=data[0]) }}"
+      method="POST"
+      enctype="multipart/form-data"
+    >
+      <div class="container mt-3">
+        <div class="row mb-3">
+          <!-- Tanggal Wisuda -->
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="tanggalWisuda">Tanggal Wisuda:</label>
+              <input
+                type="date"
+                class="form-control"
+                id="tanggalWisuda"
+                name="tanggalWisuda"
+                value="{{ data[3].strftime('%Y-%m-%d') }}"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="jumlahWisudawan">Jumlah Wisudawan:</label>
+              <input
+                type="number"
+                class="form-control"
+                id="jumlahWisudawan"
+                name="jumlahWisudawan"
+                value="{{ data[4] }}"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- Surat Permohonan -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="filePdf" class="form-label">Surat Permohonan</label>
+            <input
+              type="file"
+              class="form-control"
+              id="filePdf"
+              name="filePdf"
+              accept=".pdf"
+              onchange="previewPdf()"
+            />
+            <div id="pdfPreview" class="mt-2">
+              <iframe
+                id="pdfIframe"
+                src="{{ url_for('static', filename='uploads/' ~ data[8]) }}"
+                width="100%"
+                height="500px"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="fileExcel" class="form-label">File Excel Wisuda</label>
+            <input
+              type="file"
+              class="form-control"
+              id="fileExcel"
+              name="fileExcel"
+              accept=".xls, .xlsx"
+              onchange="previewExcel()"
+            />
+            <div
+              id="excelPreview"
+              class="scrollable-table excelPreview mt-2"
+            ></div>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Simpan</button>
+    </form>
+  </div>
+</div>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+  crossorigin="anonymous"
+></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.0/xlsx.full.min.js"></script>
+
+<script>
+  function previewPdf() {
+    const file = document.getElementById("filePdf").files[0];
+    const pdfIframe = document.getElementById("pdfIframe");
+
+    if (file) {
+      const fileURL = URL.createObjectURL(file);
+      pdfIframe.src = fileURL;
+    }
+  }
+
+  function previewExcel() {
+    const fileInput = document.getElementById("fileExcel");
+    const file = fileInput.files[0];
+    const excelPreview = document.getElementById("excelPreview");
+
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const html = XLSX.utils.sheet_to_html(sheet);
+
+        excelPreview.innerHTML = html;
+        const tables = excelPreview.getElementsByTagName("table");
+        const table = tables[0];
+
+        const modalWidth = document.getElementById("myModal").offsetWidth;
+
+        if (table.offsetWidth > modalWidth) {
+          const scale = modalWidth / table.offsetWidth;
+          table.style.width = `${modalWidth}px`;
+          table.style.transform = `scale(${scale})`;
+        }
+
+        const maxHeight = 500;
+        if (table.offsetHeight > maxHeight) {
+          table.style.overflowY = "scroll";
+          table.style.height = `${maxHeight}px`;
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } else {
+      excelPreview.innerHTML = "No Excel file selected";
+    }
+  }
+</script>
+
+{% endblock content %}
