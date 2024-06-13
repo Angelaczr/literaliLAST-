@@ -408,11 +408,12 @@ def pts_edit(id):
         # Assuming `request_data` contains a list with a single tuple
         data = request_data[0]
         # print("kosong",data)
-        # Assuming the Excel file path is in `data[14]`
+        # Assuming the Excel file path is in `data[6]`
         excel_path = data[6]
         if excel_path and os.path.exists(excel_path):
-            df = pd.read_excel(excel_path)
-            excel_data = df.to_dict('records')
+            with pd.ExcelFile(excel_path) as xls:
+                df = pd.read_excel(xls)
+                excel_data = df.to_dict('records')
         else:
             excel_data = None  
         # Handle case where Excel file is not available or path is invalid
@@ -456,6 +457,111 @@ def admin_verifikasi():
     except Exception as e:
         print(f"An error occurred while fetching data: {str(e)}")  
     return render_template('user_admin/admin_verifikasi.html', user_name=session.get('user_name'), title=title, request_data=request_data)
+
+@app.route('/admin_upload/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_upload(id):
+    if request.method == 'POST':
+        file_excel_pddikti = request.files.get('fileExcelPddikti')
+        try:
+            update_query = """
+                UPDATE file_pddikti
+                SET updated_at = NOW()
+                WHERE id = %s
+            """
+            update_params = (id,)
+            execute_query(update_query, update_params)
+
+            # Handle file uploads if new files are provided
+            if file_excel_pddikti and allowed_file(file_excel_pddikti.filename, ALLOWED_EXTENSIONS_EXCEL):
+                excel_filename_pddikti = 'dokumen_pddikti' + '_' + datetime.now().strftime("%Y%m%d_%H%M%S") + '.xlsx'
+                excel_path_pddikti = os.path.join(app.config['UPLOAD_FOLDER_PDDIKTI'], excel_filename_pddikti)
+                file_excel_pddikti.save(excel_path_pddikti)
+                
+                update_excel_query = """
+                    UPDATE file_pddikti
+                    SET excel_pddikti = %s, storage_pddikti = %s
+                    WHERE id = %s
+                """
+                update_excel_params = (excel_filename_pddikti, excel_path_pddikti, id)
+                execute_query(update_excel_query, update_excel_params)
+            
+            # Insert history record
+            history_query = """
+                INSERT INTO history_lldikti (user_id_defined, aktivitas, created_at, updated_at)
+                VALUES (%s, %s, NOW(), NOW())
+                """
+            history_params = (session['id_organization'], 'Upload Data Wisuda')
+            execute_query(history_query, history_params)
+            flash('Data berhasil diupload!', 'success')
+            return redirect(url_for('admin_verifikasi'))
+        except Exception as e:
+            print(f"An error occurred while updating the data: {str(e)}")
+            flash('Terjadi kesalahan saat mengupload data.', 'danger')
+            return redirect(request.url)
+    else:
+        try:
+            # Fetch the specific data to edit
+            query = "SELECT * FROM request WHERE id = %s"
+            request_data = execute_query(query, (id,))
+
+            if not request_data:
+                flash('Data tidak ditemukan.', 'danger')
+                return redirect(url_for('admin_verifikasi'))
+            
+            # Assuming `request_data` contains a list with a single tuple
+            data = request_data[0]
+            # print("kosong",data)
+            # Assuming the Excel file path is in `data[6]`
+            excel_path = data[6]
+            if excel_path and os.path.exists(excel_path):
+                with pd.ExcelFile(excel_path) as xls:
+                    df = pd.read_excel(xls)
+                    excel_data = df.to_dict('records')
+            else:
+                excel_data = None
+
+            # Fetch pddikti_data from file_pddikti table
+            query_pddikti = "SELECT * FROM file_pddikti WHERE id_request = %s"
+            pddikti_data_raw = execute_query(query_pddikti, (id,))
+            if not pddikti_data_raw:
+                flash('Data PDDIKTI tidak ditemukan. Silakan upload terlebih dahulu.', 'warning')
+                # Initialize empty data to avoid errors in the template
+                excel_data_pddikti = None
+            else:
+                # Assuming `request_data` contains a list with a single tuple
+                data_pddikti = pddikti_data_raw[0]
+                print("kosong",data_pddikti)
+                # Assuming the Excel file path is in `data[3]`
+                excel_path_pddikti = data_pddikti[3]
+                if excel_path_pddikti and os.path.exists(excel_path_pddikti):
+                    with pd.ExcelFile(excel_path_pddikti) as xls:
+                        df_pddikti = pd.read_excel(xls)
+                        excel_data_pddikti = df_pddikti.to_dict('records')
+                else:
+                    excel_data_pddikti = None
+        except Exception as e:
+            print(f"An error occurred while fetching data admin: {str(e)}")
+            flash('Terjadi kesalahan saat mengambil data admin', 'danger')
+            return redirect(url_for('admin_verifikasi'))
+
+    return render_template('user_admin/admin_upload.html', user_name=session['user_name'], data=data, excel_data=excel_data, excel_data_pddikti=excel_data_pddikti)
+
+@app.route('/admin_history')
+@login_required
+@admin_required
+def admin_history():
+    title = "History Admin"
+    try:
+        user_defined_id = session.get('id_organization')
+        request_query = f"SELECT * FROM history_lldikti WHERE user_id_defined = '{user_defined_id}';"
+        request_data = execute_query(request_query)
+        print(request_data)
+
+    except Exception as e:
+        print(f"An error occurred while fetching data: {str(e)}")  
+    return render_template('user_admin/admin_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
