@@ -223,7 +223,7 @@ body.dark li a:hover:before{
     color: var(--black-light-color);
 }
 .menu-items li a .link-name{
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 400;
     color: var(--black-light-color);    
     transition: var(--tran-05);
