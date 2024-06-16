@@ -22,7 +22,23 @@
       <span class="text">Verifikasi Data Wisudawan</span>
     </div>
   </div>
+
   <div class="card">
+    <h5>
+      <img
+        src="{{ url_for('static', filename='assets/img/Icon/warning.png') }}"
+        alt="Info Icon"
+      />
+      Informasi
+    </h5>
+    <p>
+      Silahkan Melakukan Pengecekan data terlebih dahulu dengan menekan Tombol
+      "Aksi", Setelah itu kirimkan data PDDIKTI dengan mengupload file excel.
+      Dan kemudian ubah status request.
+    </p>
+  </div>
+
+  <div class="card mt-3">
     <div class="table-responsive rounded-3">
       <table class="table table-striped">
         <thead>
@@ -36,11 +52,14 @@
           </tr>
         </thead>
         <tbody>
-          {% set counter = 1 %} {% for row in request_data %}
+        {% if request_data %}
+          {% for row in request_data %}
           <tr>
-            <td>{{ counter }}</td>
+            <td>{{ loop.index }}</td>
             <td>{{ row[2] }}</td>
             <td>{{ row[3].strftime('%Y-%m-%d') }}</td>
+            <td>{{ row[4] }}</td>
+            <td>{{ row[9] }}</td>
             <td>{{ row[4] }}</td>
             <td>{{ row[9] }}</td>
             <td>
@@ -49,7 +68,12 @@
               </a>
             </td>
           </tr>
-          {% set counter = counter + 1 %} {% endfor %}
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center">Tidak ada data tersedia.</td>
+          </tr>
+        {% endif %}
         </tbody>
       </table>
     </div>

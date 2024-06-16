@@ -9,136 +9,149 @@
     text: "{{ message }}",
     icon: "{{ category }}" == "danger" ? "error" : "{{ category }}",
     showConfirmButton: true,
-  }).then((result) => {
-    window.location.href = window.location.href;
-  });
+  }).then((result) => {});
 </script>
 {% endfor %} {% endif %} {% endwith %}
 
 <div class="container">
   <div class="card my-3">
     <h1>Preview Data Wisudawan</h1>
-    <div class="container mt-4">
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <div class="form-group">
-            <label for="tanggalWisuda">Tanggal Wisuda:</label>
-            <input
-              type="date"
-              class="form-control"
-              id="tanggalWisuda"
-              name="tanggalWisuda"
-              value="{{ row[3].strftime('%Y-%m-%d') }}"
-              disabled
-            />
+    <form
+      action="{{ url_for('admin_upload', id=data[0]) }}"
+      method="POST"
+      enctype="multipart/form-data"
+    >
+      <div class="container mt-4">
+        <div class="row mb-3">
+          <!-- Tanggal Wisuda -->
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="tanggalWisuda">Tanggal Wisuda:</label>
+              <input
+                type="date"
+                class="form-control"
+                id="tanggalWisuda"
+                name="tanggalWisuda"
+                value="{{ data[3].strftime('%Y-%m-%d') }}"
+                disabled
+              />
+            </div>
           </div>
-        </div>
-        <div class="col-md-6">
-          <div class="form-group">
-            <label for="jumlahWisudawan">Jumlah Wisudawan:</label>
-            <input
-              type="text"
-              class="form-control"
-              id="jumlahWisudawan"
-              name="jumlahWisudawan"
-              value="{{ row[5] }}"
-              disabled
-            />
-          </div>
-        </div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <div class="form-group">
-            <label for="jumlahWisudawan">Status:</label>
-            <input
-              type="text"
-              class="form-control"
-              id="Status"
-              name="Status"
-              value="{{ row[1] }}"
-              disabled
-            />
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="filePdf" class="form-label">Surat Permohonan</label>
-            <div id="pdfPreview">
-              <iframe src="/{{ row[8] }}" width="100%" height="500px"></iframe>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="jumlahWisudawan">Jumlah Wisudawan:</label>
+              <input
+                type="text"
+                class="form-control"
+                id="jumlahWisudawan"
+                name="jumlahWisudawan"
+                value="{{ data[4] }}"
+                disabled
+              />
             </div>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="fileExcel" class="form-label">File Excel Wisuda</label>
-            <div id="excelPreview" class="scrollable-table excelPreview">
+        <div class="row mb-3">
+          <div class="col-md-12">
+            <div class="form-group">
+              <label for="jumlahWisudawan">Status:</label>
+              <input
+                type="text"
+                class="form-control"
+                id="Status"
+                name="Status"
+                value="{{ data[9] }}"
+                disabled
+              />
             </div>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="fileExcelPddikti" class="form-label"
-              >File Excel Admin</label
-            >
-            <div id="excelShowPddikti" class="scrollable-table excelPreview">
-              <table>
-                <thead>
-                  <tr>
-                    {% for column in pddikti_data[0].keys() %}
-                    <th>{{ column }}</th>
+        <div class="row">
+          <div class="col-md-12">
+            <div class="mb-3">
+              <label for="filePdf" class="form-label">Surat Permohonan</label>
+              <div id="pdfPreview">
+                <iframe
+                  src="/{{ data[8] }}"
+                  width="100%"
+                  height="500px"
+                ></iframe>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="mb-3">
+              <label for="fileExcel" class="form-label"
+                >File Excel Wisuda</label
+              >
+              <div id="excelPreview" class="scrollable-table excelPreview">
+                {% if excel_data %}
+                <table>
+                  <thead>
+                    <tr>
+                      {% for column in excel_data[0].keys() %}
+                      <th>{{ column }}</th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in excel_data %}
+                    <tr>
+                      {% for value in row.values() %}
+                      <td>{{ value }}</td>
+                      {% endfor %}
+                    </tr>
                     {% endfor %}
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for row in pddikti_data %}
-                  <tr>
-                    {% for value in row.values() %}
-                    <td>{{ value }}</td>
-                    {% endfor %}
-                  </tr>
+                  </tbody>
+                </table>
+                {% else %}
+                <p>No data available to display.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+    <form action="{}" method="get" enctype="multipart/form-data">
+      <div class="col-md-12 mt-3">
+        <div class="mb-3">
+          <label for="fileExcelPddikti" class="form-label"
+            >File Excel Admin</label
+          >
+          <div id="excelShowPddikti" class="scrollable-table excelPreview">
+            {% if excel_data_pddikti %}
+            <table>
+              <thead>
+                <tr>
+                  {% for column in excel_data_pddikti[0].keys() %}
+                  <th>{{ column }}</th>
                   {% endfor %}
-                </tbody>
-              </table>
-            </div>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in excel_data_pddikti %}
+                <tr>
+                  {% for value in row.values() %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <p>No data available to display.</p>
+            {% endif %}
           </div>
         </div>
       </div>
-    </div>
+    </form>
   </div>
 
   <div class="card mb-3">
     <div class="card-body">
       <h5 class="card-title">Upload Data PDDIKTI</h5>
-      <form action="{{ url_for('admin_status', id=row[0]) }}" method="POST">
-        <div class="row">
-          <div class="col-md-6">
-            <div class="form-group">
-              <label for="statusWisuda">Status:</label>
-              <select
-                class="form-control"
-                id="statusWisuda"
-                name="statusWisuda"
-              >
-                <option value="Diajukan">Diajukan</option>
-                <option value="Diproses">Diproses</option>
-                <option value="Ditolak">Ditolak</option>
-                <option value="Data Siap">Data Siap</option>
-                <option value="Selesai">Selesai</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary mt-2">Simpan</button>
-      </form>
-      <hr />
-      <form
-        action="{{ url_for('admin_upload', id=row[0]) }}"
-        method="POST"
-        enctype="multipart/form-data"
-      >
+      <form action="{}" method="POST" enctype="multipart/form-data">
         <div class="row">
           <div class="col-md-6">
             <div class="form-group">
