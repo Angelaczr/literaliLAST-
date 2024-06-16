@@ -425,6 +425,26 @@ def pts_history():
         print(f"An error occurred while fetching data: {str(e)}")  
     return render_template('user_pts/pts_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
 
+# ADMIN ROUTES
+@app.route('/admin_dashboard')
+@login_required
+@admin_required
+def admin_dashboard():
+    title = "Dashboard Admin"
+    return render_template('user_admin/admin_dashboard.html', user_name=session['user_name'], title=title)
+
+@app.route('/admin_verifikasi')
+@login_required
+@admin_required
+def admin_verifikasi():
+    title = "Verifikasi Admin"
+    try:
+        request_query = f"SELECT * FROM request;"
+        request_data = execute_query(request_query)
+        print(request_data)
+    except Exception as e:
+        print(f"An error occurred while fetching data: {str(e)}")
+    return render_template('user_admin/admin_verifikasi.html', user_name=session['user_name'], title=title, request_data=request_data)
 
 
 if __name__ == '__main__':
