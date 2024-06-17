@@ -110,7 +110,7 @@
       </div>
     </form>
 
-    <form>
+    <!-- <form>
       <div class="col-md-12 mt-3">
         <div class="mb-3">
           <label for="fileExcelPddikti" class="form-label"
@@ -142,7 +142,7 @@
           </div>
         </div>
       </div>
-    </form>
+    </form> -->
   </div>
 
   <div class="card mb-3">
@@ -177,6 +177,41 @@
 
   <div class="card mb-3">
     <div class="card-body">
+      <form>
+        <div class="col-md-12 mt-3">
+          <div class="mb-3">
+            <label for="fileExcelPddikti" class="h5"
+              >Preview File Excel Admin</label
+            >
+            <div id="excelShowPddikti" class="scrollable-table excelPreview">
+              {% if excel_data_pddikti %}
+              <table>
+                <thead>
+                  <tr>
+                    {% for column in excel_data_pddikti[0].keys() %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in excel_data_pddikti %}
+                  <tr>
+                    {% for value in row.values() %}
+                    <td>{{ value }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% else %}
+              <p>Belum Upload File PDDIKTI.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="card-body">
       <h5 class="card-title">Upload Data PDDIKTI</h5>
       <form action="{{ url_for('admin_excel', id=data[0]) }}" method="POST" enctype="multipart/form-data">
         <div class="row">
@@ -189,8 +224,8 @@
                 <input
                   type="file"
                   class="form-control"
-                  id="ExcelPddikti"
-                  name="ExcelPddikti"
+                  id="fileExcelPddikti"
+                  name="fileExcelPddikti"
                   accept=".xls, .xlsx"
                   onchange="previewExcelPddikti()"
                 />
