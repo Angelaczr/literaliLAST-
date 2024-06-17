@@ -16,11 +16,7 @@
 <div class="container">
   <div class="card my-3">
     <h1>Preview Data Wisudawan</h1>
-    <form
-      action="{{ url_for('admin_upload', id=data[0]) }}"
-      method="POST"
-      enctype="multipart/form-data"
-    >
+    <form>
       <div class="container mt-4">
         <div class="row mb-3">
           <!-- Tanggal Wisuda -->
@@ -54,7 +50,7 @@
         <div class="row mb-3">
           <div class="col-md-12">
             <div class="form-group">
-              <label for="jumlahWisudawan">Status:</label>
+              <label for="status">Status:</label>
               <input
                 type="text"
                 class="form-control"
@@ -113,7 +109,8 @@
         </div>
       </div>
     </form>
-    <form action="{}" method="get" enctype="multipart/form-data">
+
+    <form>
       <div class="col-md-12 mt-3">
         <div class="mb-3">
           <label for="fileExcelPddikti" class="form-label"
@@ -140,7 +137,7 @@
               </tbody>
             </table>
             {% else %}
-            <p>No data available to display.</p>
+            <p>Belum Upload File PDDIKTI.</p>
             {% endif %}
           </div>
         </div>
@@ -150,8 +147,38 @@
 
   <div class="card mb-3">
     <div class="card-body">
+      <h5 class="card-title">Update Status PDDIKTI</h5>
+      <form action="{{ url_for('admin_status', id=data[0]) }}" method="POST">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <div class="mb-3">
+                <label for="status_name" class="form-label">Status</label>
+                <div class="dropdown-icon-wrapper">
+                  <select
+                    class="form-control"
+                    id="status_name"
+                    name="status_name"
+                  >
+                    <option value="Diajukan">Diajukan</option>
+                    <option value="Ditolak">Ditolak</option>
+                    <option value="Data Siap">Data Siap</option>
+                  </select>
+                  <i class="bi bi-caret-down-fill dropdown-icon"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
       <h5 class="card-title">Upload Data PDDIKTI</h5>
-      <form action="{}" method="POST" enctype="multipart/form-data">
+      <form action="{{ url_for('admin_excel', id=data[0]) }}" method="POST" enctype="multipart/form-data">
         <div class="row">
           <div class="col-md-6">
             <div class="form-group">
@@ -162,8 +189,8 @@
                 <input
                   type="file"
                   class="form-control"
-                  id="fileExcelPddikti"
-                  name="fileExcelPddikti"
+                  id="ExcelPddikti"
+                  name="ExcelPddikti"
                   accept=".xls, .xlsx"
                   onchange="previewExcelPddikti()"
                 />
@@ -176,6 +203,33 @@
           </div>
         </div>
         <button type="submit" class="btn btn-primary mt-2">Simpan</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Tambah Keterangan</h5>
+      <form action="{{ url_for('admin_notes', id=data[0]) }}" method="POST">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <div class="mb-3">
+                <label for="notes">Keterangan</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="notes"
+                  name="notes"
+                  value="Tambahkan Keterangan Notes"
+                  onfocus="clearValue(this)"
+                  onblur="resetValue(this)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Simpan</button>
       </form>
     </div>
   </div>
@@ -289,6 +343,19 @@
       reader.readAsArrayBuffer(file);
     } else {
       excelPreview.innerHTML = "No Excel file selected";
+    }
+  }
+</script>
+<script>
+  function clearValue(input) {
+    if (input.value === "Tambahkan Keterangan Notes") {
+      input.value = "";
+    }
+  }
+
+  function resetValue(input) {
+    if (input.value === "") {
+      input.value = "Tambahkan Keterangan Notes";
     }
   }
 </script>

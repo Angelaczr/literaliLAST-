@@ -23,7 +23,6 @@
       <i class="uil uil-edit"></i>
       <span class="text">Edit Data</span>
     </div>
-    <!-- <h2>Edit Data</h2> -->
     <form
       action="{{ url_for('pts_edit', id=data[0]) }}"
       method="POST"
@@ -154,14 +153,6 @@
     } else {
       pdfIframe.innerHTML = "No PDF file selected";
     }
-    
-    // const file = document.getElementById("filePdf").files[0];
-    // const pdfIframe = document.getElementById("pdfIframe");
-
-    // if (file) {
-    //   const fileURL = URL.createObjectURL(file);
-    //   pdfIframe.src = fileURL;
-    // }
   }
 
   function previewExcel() {

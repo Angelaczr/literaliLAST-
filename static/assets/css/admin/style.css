@@ -641,4 +641,22 @@ nav.close ~ .dashboard .top{
     text-decoration: none;
     cursor: pointer;
   }
-  
+
+  .dropdown-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+
+  .dropdown-icon-wrapper select {
+    width: 100%;
+    padding-right: 30px; /* Adjust the padding to make room for the icon */
+  }
+
+  .dropdown-icon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    pointer-events: none; /* Make sure the icon does not block the dropdown interaction */
+  }

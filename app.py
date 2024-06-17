@@ -319,7 +319,7 @@ def pts_input():
             INSERT INTO request (user_id_defined,org_name, tgl_wisuda, jmlh_wisuda, excel_wisuda, storage_excel, super_wisuda, storage_super, status_name, notes, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
-            request_params = (user_defined_id,org_name, tanggal_wisuda, jumlah_wisudawan, excel_filename, excel_path, pdf_filename, pdf_path, 'Draf', '-', formatted_timestamp, formatted_timestamp)
+            request_params = (user_defined_id,org_name, tanggal_wisuda, jumlah_wisudawan, excel_filename, excel_path, pdf_filename, pdf_path, 'Draf', 'not set', formatted_timestamp, formatted_timestamp)
             execute_query(request_query, request_params)
 
             history_query = """
@@ -436,13 +436,6 @@ def pts_history():
     return render_template('user_pts/pts_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
 
 # ADMIN ROUTES
-@app.route('/admin_dashboard')
-@login_required
-@admin_required
-def admin_dashboard():
-    title = "Dashboard Admin"
-    return render_template('user_admin/admin_dashboard.html', user_name=session['user_name'], title=title)
-
 @app.route('/admin_verifikasi')
 @login_required
 @admin_required
@@ -451,7 +444,7 @@ def admin_verifikasi():
     try:
         request_query = f"SELECT * FROM request;"
         request_data = execute_query(request_query)
-        print(request_data)
+        # print(request_data)
     except Exception as e:
         print(f"An error occurred while fetching data: {str(e)}")
     return render_template('user_admin/admin_verifikasi.html', user_name=session['user_name'], title=title, request_data=request_data)
@@ -462,111 +455,7 @@ def admin_verifikasi():
 @admin_required
 def admin_dashboard():
     title = "Dashboard"
-    return render_template('user_admin/admin_dashboard.html', user_name=session['user_name'], title=title)
-
-@app.route('/admin_verifikasi', methods=['GET'])
-@login_required
-@admin_required
-def admin_verifikasi():
-    title = "Verifikasi Admin"
-    try:
-        request_query = "SELECT * FROM request;"
-        request_data = execute_query(request_query)
-        print(request_data)
-
-    except Exception as e:
-        print(f"An error occurred while fetching data: {str(e)}")  
-    return render_template('user_admin/admin_verifikasi.html', user_name=session.get('user_name'), title=title, request_data=request_data)
-
-@app.route('/admin_upload/<int:id>', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def admin_upload(id):
-    if request.method == 'POST':
-        file_excel_pddikti = request.files.get('fileExcelPddikti')
-        try:
-            update_query = """
-                UPDATE file_pddikti
-                SET updated_at = NOW()
-                WHERE id = %s
-            """
-            update_params = (id,)
-            execute_query(update_query, update_params)
-
-            # Handle file uploads if new files are provided
-            if file_excel_pddikti and allowed_file(file_excel_pddikti.filename, ALLOWED_EXTENSIONS_EXCEL):
-                excel_filename_pddikti = 'dokumen_pddikti' + '_' + datetime.now().strftime("%Y%m%d_%H%M%S") + '.xlsx'
-                excel_path_pddikti = os.path.join(app.config['UPLOAD_FOLDER_PDDIKTI'], excel_filename_pddikti)
-                file_excel_pddikti.save(excel_path_pddikti)
-                
-                update_excel_query = """
-                    UPDATE file_pddikti
-                    SET excel_pddikti = %s, storage_pddikti = %s
-                    WHERE id = %s
-                """
-                update_excel_params = (excel_filename_pddikti, excel_path_pddikti, id)
-                execute_query(update_excel_query, update_excel_params)
-            
-            # Insert history record
-            history_query = """
-                INSERT INTO history_lldikti (user_id_defined, aktivitas, created_at, updated_at)
-                VALUES (%s, %s, NOW(), NOW())
-                """
-            history_params = (session['id_organization'], 'Upload Data Wisuda')
-            execute_query(history_query, history_params)
-            flash('Data berhasil diupload!', 'success')
-            return redirect(url_for('admin_verifikasi'))
-        except Exception as e:
-            print(f"An error occurred while updating the data: {str(e)}")
-            flash('Terjadi kesalahan saat mengupload data.', 'danger')
-            return redirect(request.url)
-    else:
-        try:
-            # Fetch the specific data to edit
-            query = "SELECT * FROM request WHERE id = %s"
-            request_data = execute_query(query, (id,))
-
-            if not request_data:
-                flash('Data tidak ditemukan.', 'danger')
-                return redirect(url_for('admin_verifikasi'))
-            
-            # Assuming `request_data` contains a list with a single tuple
-            data = request_data[0]
-            # print("kosong",data)
-            # Assuming the Excel file path is in `data[6]`
-            excel_path = data[6]
-            if excel_path and os.path.exists(excel_path):
-                with pd.ExcelFile(excel_path) as xls:
-                    df = pd.read_excel(xls)
-                    excel_data = df.to_dict('records')
-            else:
-                excel_data = None
-
-            # Fetch pddikti_data from file_pddikti table
-            query_pddikti = "SELECT * FROM file_pddikti WHERE id_request = %s"
-            pddikti_data_raw = execute_query(query_pddikti, (id,))
-            if not pddikti_data_raw:
-                flash('Data PDDIKTI tidak ditemukan. Silakan upload terlebih dahulu.', 'warning')
-                # Initialize empty data to avoid errors in the template
-                excel_data_pddikti = None
-            else:
-                # Assuming `request_data` contains a list with a single tuple
-                data_pddikti = pddikti_data_raw[0]
-                print("kosong",data_pddikti)
-                # Assuming the Excel file path is in `data[3]`
-                excel_path_pddikti = data_pddikti[3]
-                if excel_path_pddikti and os.path.exists(excel_path_pddikti):
-                    with pd.ExcelFile(excel_path_pddikti) as xls:
-                        df_pddikti = pd.read_excel(xls)
-                        excel_data_pddikti = df_pddikti.to_dict('records')
-                else:
-                    excel_data_pddikti = None
-        except Exception as e:
-            print(f"An error occurred while fetching data admin: {str(e)}")
-            flash('Terjadi kesalahan saat mengambil data admin', 'danger')
-            return redirect(url_for('admin_verifikasi'))
-
-    return render_template('user_admin/admin_upload.html', user_name=session['user_name'], data=data, excel_data=excel_data, excel_data_pddikti=excel_data_pddikti)
+    return render_template('user_admin/admin_dashboard.html', user_name=session['user_name'], title=title) 
 
 @app.route('/admin_history')
 @login_required
@@ -582,6 +471,180 @@ def admin_history():
     except Exception as e:
         print(f"An error occurred while fetching data: {str(e)}")  
     return render_template('user_admin/admin_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
+
+@app.route('/admin_upload/<int:id>', methods=['GET'])
+@login_required
+@admin_required
+def admin_upload(id):
+    try:
+        query = "SELECT * FROM request WHERE id = %s"
+        request_data = execute_query(query, (id,))
+
+        if not request_data:
+            flash('Data tidak ditemukan.', 'danger')
+            return redirect(url_for('admin_verifikasi'))
+        
+        # Assuming `request_data` contains a list with a single tuple
+        data = request_data[0]
+        print('requestan data nyooo',data)
+
+        excel_path = data[6]
+        if excel_path and os.path.exists(excel_path):
+            with pd.ExcelFile(excel_path) as xls:
+                df = pd.read_excel(xls)
+                excel_data = df.to_dict('records')
+        else:
+            excel_data = None
+
+        # Fetch pddikti_data from file_pddikti table
+        query_pddikti = "SELECT * FROM file_pddikti WHERE req_id = %s"
+        pddikti_data_raw = execute_query(query_pddikti, (id,))
+        if not pddikti_data_raw:
+            flash('Data PDDIKTI Belum Diupload. Silakan upload terlebih dahulu.', 'warning')
+            excel_data_pddikti = None
+        else:
+            # Assuming `request_data` contains a list with a single tuple
+            data_pddikti = pddikti_data_raw[0]
+            excel_path_pddikti = data_pddikti[3]
+            if excel_path_pddikti and os.path.exists(excel_path_pddikti):
+                with pd.ExcelFile(excel_path_pddikti) as xls:
+                    df_pddikti = pd.read_excel(xls)
+                    excel_data_pddikti = df_pddikti.to_dict('records')
+            else:
+                excel_data_pddikti = None
+    except Exception as e:
+        print(f"An error occurred while fetching data admin: {str(e)}")
+        flash('Terjadi kesalahan saat mengambil data admin', 'danger')
+        return redirect(url_for('admin_verifikasi'))
+    
+    return render_template('user_admin/admin_upload.html', user_name=session['user_name'], data=data, excel_data=excel_data, excel_data_pddikti=excel_data_pddikti)
+
+@app.route('/admin_status/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_status(id):
+    try:
+        # Mendapatkan nilai status dari form
+        status = request.form.get('status_name')
+        
+        if not status:
+            flash('Status tidak boleh kosong', 'danger')
+            return redirect(url_for('admin_upload', id=id))
+
+        # Eksekusi query untuk update status
+        query = """ 
+        UPDATE request 
+        SET status_name = %s, updated_at = NOW() 
+        WHERE id = %s
+        """
+        execute_query(query, (status, id))
+        flash('Status berhasil di update', 'success')
+        
+        # Insert history record
+        history_admin = """
+                INSERT INTO history_lldikti (user_id_defined, aktivitas, created_at, updated_at)
+                VALUES (%s, %s, NOW(), NOW())
+            """
+        history_params = (session['id_organization'], 'Update Data Status')
+        execute_query(history_admin, history_params)
+        
+    except Exception as e:
+        print(f"An error occurred while updating status: {str(e)}")
+        flash('Terjadi kesalahan saat mengubah status', 'danger')
+    return redirect(url_for('admin_verifikasi', id=id))
+
+@app.route('/admin_notes/<int:id>', methods=['POST'])
+@login_required
+@admin_required 
+def admin_notes(id):
+    try:
+        # Mendapatkan nilai status dari form
+        notes = request.form.get('notes')
+        
+        if not notes:
+            flash('Keterangan tidak boleh kosong', 'danger')
+            return redirect(url_for('admin_upload', id=id))
+
+        # Eksekusi query untuk update status
+        query = """ 
+        UPDATE request 
+        SET notes = %s, updated_at = NOW() 
+        WHERE id = %s
+        """
+        execute_query(query, (notes, id))
+        flash('Status berhasil di update', 'success')
+        
+        # Insert history record
+        history_admin = """
+                INSERT INTO history_lldikti (user_id_defined, aktivitas, created_at, updated_at)
+                VALUES (%s, %s, NOW(), NOW())
+            """
+        history_params = (session['id_organization'], 'Update Keterangan Notes')
+        execute_query(history_admin, history_params)
+        
+    except Exception as e:
+        print(f"An error occurred while updating status: {str(e)}")
+        flash('Terjadi kesalahan saat mengubah status', 'danger')
+    return redirect(url_for('admin_verifikasi', id=id))
+    
+@app.route('/admin_excel/<int:id>', methods=['POST'])
+@login_required
+@admin_required 
+def admin_excel(id):
+    try:
+        # Mendapatkan file Excel dari form
+        file_excel_pddikti = request.files.get('ExcelPddikti')
+        print("Received file:", file_excel_pddikti)
+
+        if not file_excel_pddikti:
+            flash('Tidak ada file Excel yang diupload.', 'danger')
+            return redirect(request.url)
+        
+        # Validasi file Excel
+        if not allowed_file(file_excel_pddikti.filename, ALLOWED_EXTENSIONS_EXCEL):
+            flash('Bukan File Excel atau file tidak valid.', 'danger')
+            return redirect(request.url)
+
+        if file_excel_pddikti.content_length > app.config['MAX_CONTENT_LENGTH']:
+            flash('Ukuran file Excel terlalu besar.', 'danger')
+            return redirect(request.url)
+        
+        # Membuat timestamp untuk nama file dan waktu penyimpanan
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        formatted_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print("Timestamp:", timestamp)
+        print("Formatted Timestamp:", formatted_timestamp)
+        
+        # Menyimpan file Excel
+        excel_filename = f'dokumen_pddikti_{timestamp}.xlsx'
+        excel_path = os.path.join(app.config['UPLOAD_FOLDER_PDDIKTI'], excel_filename)
+        print("Excel Filename:", excel_filename)
+        print("Excel Path:", excel_path)
+        file_excel_pddikti.save(excel_path)
+        print("File saved successfully.")
+        
+        # Eksekusi query untuk memasukkan data file pddikti
+        query_insert_pddikti = """
+            INSERT INTO file_pddikti (req_id, excel_pddikti, storage_pddikti, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        execute_query(query_insert_pddikti, (id, excel_filename, excel_path, formatted_timestamp, formatted_timestamp))
+        print("Query executed successfully.")
+        
+        flash('Upload File berhasil', 'success')
+        
+        # Insert history record
+        history_admin = """
+            INSERT INTO history_lldikti (user_id_defined, aktivitas, created_at, updated_at)
+            VALUES (%s, %s, NOW(), NOW())
+        """
+        execute_query(history_admin, (session['id_organization'], 'Upload Data Wisuda'))
+        print("History record inserted successfully.")
+        
+    except Exception as e:
+        print(f"An error occurred while uploading the Excel file: {str(e)}")
+        flash('Terjadi kesalahan saat mengupload file.', 'danger')
+    return redirect(url_for('admin_upload', id=id))
 
 if __name__ == '__main__':
     app.run(debug=True)
