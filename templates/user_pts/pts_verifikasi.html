@@ -65,21 +65,43 @@
           </tr>
         </thead>
         <tbody>
-          {% if request_data %}
-            {% for row in request_data %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ row[3].strftime('%Y-%m-%d')}}</td>
-              <td>{{ row[4] }}</td>
-              <td>{{ row[9] }}</td>
-              <td>
-                <a href="{{ url_for('pts_edit', id=row[0]) }}" class="text-primary">
-                  <i class="fas fa-edit"></i>
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          {% else %}
+          {% if request_data %} {% for row in request_data %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row[3].strftime('%Y-%m-%d')}}</td>
+            <td>{{ row[4] }}</td>
+            <td>{{ row[9] }}</td>
+            <td>
+              <a
+                href="{{ url_for('pts_edit', id=row[0]) }}"
+                class="text-primary"
+              >
+                <i class="fas fa-edit"></i>
+              </a>
+            </td>
+
+            {% if row[9] == 'Data Siap' %}
+            <td>
+              <a
+                href="{{ url_for('pts_bandingkan', id=row[0]) }}"
+                class="text-primary"
+              >
+                <i class="fa-solid fa-code-compare"></i>
+              </a>
+            </td>
+            {% endif %} {% if row[9] == 'Ditolak' %}
+            <td>
+              <a
+                href="javascript:void(0);"
+                class="text-primary"
+                onclick="showModal('{{ row[10] }}')"
+              >
+                <i class="fa-solid fa-message"></i>
+              </a>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %} {% else %}
           <tr>
             <td colspan="5" class="text-center">Tidak ada data tersedia.</td>
           </tr>
@@ -89,42 +111,137 @@
     </div>
   </div>
 
-<!-- Modal -->
-<div class="modal fade" id="pengajuanWisudaModal" tabindex="-1" aria-labelledby="pengajuanWisudaModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="pengajuanWisudaModalLabel">Pengajuan Wisuda</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form action="{{ url_for('pts_input') }}" id="pengajuanWisudaForm" method="POST" enctype="multipart/form-data">
-          <div class="mb-3">
-            <label for="tanggalWisuda" class="form-label">Tanggal Wisuda</label>
-            <input type="date" class="form-control" id="tanggalWisuda" name="tanggalWisuda" required/>
-          </div>
-          <div class="mb-3">
-            <label for="jumlahWisudawan" class="form-label">Jumlah Wisudawan</label>
-            <input type="number" class="form-control" id="jumlahWisudawan" name="jumlahWisudawan" required/>
-          </div>
-          <div class="mb-3">
-            <label for="filePdf" class="form-label">Surat Permohonan</label>
-            <input type="file" class="form-control" id="filePdf" name="filePdf" accept=".pdf" onchange="previewPdf()"/>
-            <div class="mt-2" id="pdfPreview"></div>
-          </div>
-          <div class="mb-3">
-            <label for="fileExcel" class="form-label">File Excel Wisuda</label>
-            <input type="file" class="form-control" id="fileExcel" name="fileExcel" accept=".xls, .xlsx" onchange="previewExcel()"/>
-            <div class="mt-2 scrollable-table" id="excelPreview"></div>
-          </div>
-          <input type="hidden" name="user_defined_id" value="{{ session['id_organization'] }}"/>
-          <input type="hidden" name="org_name" value="{{ session['user_name'] }}"/>
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
+  <!-- Modal Create Data Baru-->
+  <div
+    class="modal fade"
+    id="pengajuanWisudaModal"
+    tabindex="-1"
+    aria-labelledby="pengajuanWisudaModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pengajuanWisudaModalLabel">
+            Pengajuan Wisuda
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form
+            action="{{ url_for('pts_input') }}"
+            id="pengajuanWisudaForm"
+            method="POST"
+            enctype="multipart/form-data"
+          >
+            <div class="mb-3">
+              <label for="tanggalWisuda" class="form-label"
+                >Tanggal Wisuda</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="tanggalWisuda"
+                name="tanggalWisuda"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="jumlahWisudawan" class="form-label"
+                >Jumlah Wisudawan</label
+              >
+              <input
+                type="number"
+                class="form-control"
+                id="jumlahWisudawan"
+                name="jumlahWisudawan"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="filePdf" class="form-label">Surat Permohonan</label>
+              <input
+                type="file"
+                class="form-control"
+                id="filePdf"
+                name="filePdf"
+                accept=".pdf"
+                onchange="previewPdf()"
+              />
+              <div class="mt-2" id="pdfPreview"></div>
+            </div>
+            <div class="mb-3">
+              <label for="fileExcel" class="form-label"
+                >File Excel Wisuda</label
+              >
+              <input
+                type="file"
+                class="form-control"
+                id="fileExcel"
+                name="fileExcel"
+                accept=".xls, .xlsx"
+                onchange="previewExcel()"
+              />
+              <div class="mt-2 scrollable-table" id="excelPreview"></div>
+            </div>
+            <input
+              type="hidden"
+              name="user_defined_id"
+              value="{{ session['id_organization'] }}"
+            />
+            <input
+              type="hidden"
+              name="org_name"
+              value="{{ session['user_name'] }}"
+            />
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- Modal Messages-->
+  <div
+    class="modal fade"
+    id="messageModal"
+    tabindex="-1"
+    aria-labelledby="messageModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="messageModalLabel">Message</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <label for="messageInput" class="form-label">Pesan</label>
+              <input
+                type="text"
+                class="form-control"
+                id="messageInput"
+                disabled
+              />
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Bootstrap JS -->
   <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
@@ -138,10 +255,10 @@
       const fileInput = document.getElementById("filePdf");
       const file = fileInput.files[0];
       const pdfPreview = document.getElementById("pdfPreview");
-  
+
       if (file) {
         const reader = new FileReader();
-  
+
         reader.onload = function (e) {
           const pdfObject = document.createElement("object");
           pdfObject.data = e.target.result;
@@ -151,53 +268,64 @@
           pdfPreview.innerHTML = "";
           pdfPreview.appendChild(pdfObject);
         };
-  
+
         reader.readAsDataURL(file);
       } else {
         pdfPreview.innerHTML = "No PDF file selected";
       }
     }
-  
+
     function previewExcel() {
       const fileInput = document.getElementById("fileExcel");
       const file = fileInput.files[0];
       const excelPreview = document.getElementById("excelPreview");
-  
+
       if (file) {
         const reader = new FileReader();
-  
+
         reader.onload = function (e) {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array" });
           const sheetName = workbook.SheetNames[0];
           const sheet = workbook.Sheets[sheetName];
           const html = XLSX.utils.sheet_to_html(sheet);
-  
+
           excelPreview.innerHTML = html;
           const tables = excelPreview.getElementsByTagName("table");
           const table = tables[0];
-  
+
           const modalWidth = document.getElementById("myModal").offsetWidth;
-  
+
           if (table.offsetWidth > modalWidth) {
             const scale = modalWidth / table.offsetWidth;
             table.style.width = `${modalWidth}px`;
             table.style.transform = `scale(${scale})`;
           }
-  
+
           const maxHeight = 500;
           if (table.offsetHeight > maxHeight) {
             table.style.overflowY = "scroll";
             table.style.height = `${maxHeight}px`;
           }
         };
-  
+
         reader.readAsArrayBuffer(file);
       } else {
         excelPreview.innerHTML = "No Excel file selected";
       }
     }
   </script>
-  
+
+  <!-- JavaScript Modal Message-->
+  <script>
+    function showModal(message) {
+      document.getElementById("messageInput").value = message;
+      var myModal = new bootstrap.Modal(
+        document.getElementById("messageModal")
+      );
+      myModal.show();
+    }
+  </script>
+
   {% endblock content %}
 </div>

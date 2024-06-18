@@ -239,12 +239,12 @@ def pts_dashboard():
 @pts_required
 def pts_verifikasi():
     title = "Verifikasi Data"
+    request_data = []
     try:
         user_defined_id = session.get('id_organization')
         request_query = f"SELECT * FROM request WHERE user_id_defined = '{user_defined_id}';"
         request_data = execute_query(request_query)
         print(request_data)
-
     except Exception as e:
         print(f"An error occurred while fetching data: {str(e)}")  
     return render_template('user_pts/pts_verifikasi.html', user_name=session.get('user_name'), title=title, request_data=request_data)
@@ -434,6 +434,13 @@ def pts_history():
     except Exception as e:
         print(f"An error occurred while fetching data: {str(e)}")  
     return render_template('user_pts/pts_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
+
+@app.route('/pts_bandingkan')
+@login_required
+@pts_required
+def pts_bandingkan():
+    return render_template('user_pts/pts_bandingkan.html', user_name=session.get('user_name'))
+
 
 # ADMIN ROUTES
 @app.route('/admin_verifikasi')
