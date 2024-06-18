@@ -600,7 +600,7 @@ def admin_notes(id):
 def admin_excel(id):
     try:
         # Mendapatkan file Excel dari form
-        file_excel_pddikti = request.files.get('ExcelPddikti')
+        file_excel_pddikti = request.files.get('fileExcelPddikti')
         print("Received file:", file_excel_pddikti)
 
         if not file_excel_pddikti:
