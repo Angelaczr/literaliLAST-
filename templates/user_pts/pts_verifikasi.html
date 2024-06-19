@@ -1,21 +1,30 @@
 {% extends 'master/main.html' %} {% block content %}
 
 <!-- Begin alerts -->
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%} {% for category, message in messages %}
 <script>
-  Swal.fire({
-    title: "{{ category.title() }}!",
-    text: "{{ message }}",
-    icon: "{{ category }}" == "danger" ? "error" : "{{ category }}",
-    showConfirmButton: true,
-  }).then((result) => {
-    // Redirect to the same page
-    window.location.href = window.location.href;
+  $(document).ready(function() {
+      {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+              {% for category, message in messages %}
+                  Swal.fire({
+                      title: category.title(),
+                      text: message,
+                      icon: category == 'danger' ? 'error' : category,
+                      showConfirmButton: true,
+                  }).then((result) => {
+                      if (category == 'success') {
+                          window.location.href = "{{ download_path }}";
+                      } else {
+                          // Optionally, refresh the page
+                          window.location.href = window.location.href;
+                      }
+                  });
+              {% endfor %}
+          {% endif %}
+      {% endwith %}
   });
 </script>
-{% endfor %} {% endif %} {% endwith %}
-<!-- End alerts -->
+
 
 <div class="activity mx-3">
   <div class="title mt-2">

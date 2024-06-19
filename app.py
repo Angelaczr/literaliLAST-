@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, current_app, g, session, request, redirect, url_for, flash, Response
+from flask import Flask, render_template, jsonify, current_app, g, send_file, session, request, redirect, url_for, flash, Response
 import io
 import requests
 from requests.exceptions import ConnectionError, Timeout
@@ -81,7 +81,7 @@ def execute_query(cursor, query, params=None):
  
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ThisIsSupposedToBeSecret!'
-
+app.config['DEBUG'] = True
 server_timezone = pytz.timezone('Asia/Jakarta')
 
 # DIREKTORI DATA-LLDIKTI
@@ -93,6 +93,7 @@ app.config['UPLOAD_FOLDER_PTS'] = UPLOAD_FOLDER_PTS
 #unduh
 EXPORT_FOLDER_PTS = 'static/document/export'
 app.config['EXPORT_FOLDER_PTS'] = EXPORT_FOLDER_PTS
+os.makedirs(EXPORT_FOLDER_PTS, exist_ok=True)
 #direkori super
 SUPER_FOLDER_PTS = 'static/document/super'
 app.config['SUPER_FOLDER_PTS'] = SUPER_FOLDER_PTS
@@ -104,7 +105,7 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 2 MB
 ALLOWED_EXTENSIONS_PDF = {'pdf'}
 ALLOWED_EXTENSIONS_EXCEL = {'xlsx', 'xls'}
 API_URL = "http://api.e-cher.my.id/user"
-
+logging.basicConfig(level=logging.DEBUG)
 def get_user_role(id_organization_type):
     if id_organization_type == "3":  
         return 'PTS'
@@ -244,7 +245,7 @@ def pts_verifikasi():
         user_defined_id = session.get('id_organization')
         request_query = f"SELECT * FROM request WHERE user_id_defined = '{user_defined_id}';"
         request_data = execute_query(request_query)
-        print(request_data)
+        # print(request_data)
     except Exception as e:
         print(f"An error occurred while fetching data: {str(e)}")  
     return render_template('user_pts/pts_verifikasi.html', user_name=session.get('user_name'), title=title, request_data=request_data)
@@ -435,12 +436,210 @@ def pts_history():
         print(f"An error occurred while fetching data: {str(e)}")  
     return render_template('user_pts/pts_history.html', user_name=session.get('user_name'), title=title, request_data=request_data)
 
-@app.route('/pts_bandingkan')
+def get_excel_data(req_id=None, request_id=None):
+    try:
+        result = None
+        if req_id:
+            query = "SELECT * FROM request WHERE id = %s"
+            result = execute_query(query, (req_id,))
+            print(f"Query executed for req_id={req_id}, Result: {result}")
+        elif request_id:
+            query = "SELECT * FROM file_pddikti WHERE req_id = %s"
+            result = execute_query(query, (request_id,))
+            print(f"Query executed for request_id={request_id}, Result: {result}")
+        else:
+            print("Neither req_id nor request_id provided.")
+            return None
+        
+        if result:
+            # Ambil file_path dari hasil query
+            if req_id:
+                file_path = result[0][6]  # Ambil indeks ke-6 (storage_excel)
+            else:
+                file_path = result[0][3]  # Ambil indeks ke-3 (storage_pddikti)
+            
+            print(f"File path retrieved: {file_path}")
+            return file_path
+        else:
+            print("No result found from database.")
+            return None
+    except Exception as e:
+        logging.error(f"Error getting Excel data: {str(e)}")
+        return None
+
+              
+def compare_data(file_path1, file_path2):
+    try:
+        print(f"Comparing files: {file_path1} and {file_path2}")
+        
+        # Cek apakah file_path1 dan file_path2 ada di sistem
+        if not os.path.exists(file_path1):
+            print(f"File not found: {file_path1}")
+            raise FileNotFoundError(f"File not found: {file_path1}")
+        
+        if not os.path.exists(file_path2):
+            print(f"File not found: {file_path2}")
+            raise FileNotFoundError(f"File not found: {file_path2}")
+
+        # Membaca data dari file Excel
+        data_user = pd.read_excel(file_path1)
+        data_admin = pd.read_excel(file_path2)
+
+        # Mengubah kolom tgl_lahir di kedua dataset menjadi format datetime dan kemudian mengubah format menjadi DD/MM/YY
+        data_user['tgl_lahir'] = pd.to_datetime(data_user['tgl_lahir'], errors='coerce').dt.strftime('%d/%m/%Y')
+        data_admin['tgl_lahir'] = pd.to_datetime(data_admin['tgl_lahir'], errors='coerce').dt.strftime('%d/%m/%Y')
+
+        # Fungsi untuk verifikasi dan membandingkan
+        def verify_and_compare(row_user, row_admin):
+            nim_match = row_user['nim'] == row_admin['nim']
+            name_match = row_user['nama_mhs'].strip() == row_admin['nama_mhs'].strip()
+            birthplace_match = row_user['tempat_lahir'].strip() == row_admin['tempat_lahir'].strip()
+            birthdate_match = row_user['tgl_lahir'] == row_admin['tgl_lahir']
+            
+            comparison_result = {
+                'nim_match': nim_match,
+                'name_match': name_match,
+                'birthplace_match': birthplace_match,
+                'birthdate_match': birthdate_match
+            }
+            
+            if all(comparison_result.values()):
+                return comparison_result
+            else:
+                mismatch_details = {k: v for k, v in comparison_result.items() if not v}
+                return mismatch_details
+
+        # Inisialisasi dictionary untuk menyimpan hasil verifikasi berdasarkan NIM
+        verification_results = {}
+
+        # Loop untuk mencari dan membandingkan data berdasarkan NIM
+        for index, row_user in data_user.iterrows():
+            nim = row_user['nim']
+            if nim not in verification_results:
+                verification_results[nim] = []
+            
+            row_admin = data_admin[data_admin['nim'] == nim]
+            if not row_admin.empty:
+                row_admin = row_admin.iloc[0]
+                verification = verify_and_compare(row_user, row_admin)
+                verification_results[nim].append({'verification': verification, 'row_user': row_user, 'row_admin': row_admin})
+            else:
+                # Search for potential match by other attributes if NIM not found
+                potential_matches = data_admin[
+                    (data_admin['nama_mhs'].str.strip() == row_user['nama_mhs'].strip()) &
+                    (data_admin['tempat_lahir'].str.strip() == row_user['tempat_lahir'].strip()) &
+                    (data_admin['tgl_lahir'] == row_user['tgl_lahir'])
+                ]
+                if not potential_matches.empty:
+                    potential_match = potential_matches.iloc[0]
+                    verification_results[nim].append({'verification': f"NIM berbeda dengan {potential_match['nim']}", 'row_user': row_user, 'row_admin': potential_match})
+                else:
+                    verification_results[nim].append({'verification': 'NIM tidak ditemukan di data admin'})
+
+        # Inisialisasi dictionary untuk menyimpan kategori mismatch
+        mismatch_details = {
+            'nim_beda': [],
+            'nama_beda': [],
+            'tempat_lahir_beda': [],
+            'tanggal_lahir_beda': []
+        }
+
+        # Memisahkan hasil verifikasi yang tidak sesuai ke dalam kategori mismatch
+        for nim, results in verification_results.items():
+            for result in results:
+                verification = result['verification']
+                if isinstance(verification, dict):
+                    for key, value in verification.items():
+                        if not value:
+                            if key == 'nim_match':
+                                mismatch_details['nim_beda'].append((result['row_user']['nim'], result['row_admin']['nim']))
+                            elif key == 'name_match':
+                                mismatch_details['nama_beda'].append((result['row_user']['nama_mhs'], result['row_admin']['nama_mhs']))
+                            elif key == 'birthplace_match':
+                                mismatch_details['tempat_lahir_beda'].append((result['row_user']['tempat_lahir'], result['row_admin']['tempat_lahir']))
+                            elif key == 'birthdate_match':
+                                mismatch_details['tanggal_lahir_beda'].append((result['row_user']['tgl_lahir'], result['row_admin']['tgl_lahir']))
+                elif "NIM berbeda dengan" in verification:
+                    nim_admin = result['row_admin']['nim']
+                    mismatch_details['nim_beda'].append((nim, nim_admin))
+                elif verification == 'NIM tidak ditemukan di data admin':
+                    mismatch_details['nim_beda'].append(nim)
+        
+        # Menghilangkan duplikasi dari hasil mismatch
+        mismatch_details['nim_beda'] = list(set(mismatch_details['nim_beda']))
+        mismatch_details['nim_beda'] = [item for item in mismatch_details['nim_beda'] if isinstance(item, tuple)]
+        
+        mismatch_details['nama_beda'] = list(set(mismatch_details['nama_beda']))
+        mismatch_details['tempat_lahir_beda'] = list(set(mismatch_details['tempat_lahir_beda']))
+        mismatch_details['tanggal_lahir_beda'] = list(set(mismatch_details['tanggal_lahir_beda']))
+        
+        # Print hasil verifikasi yang dikelompokkan
+        print("\nHasil Verifikasi yang Dikelompokkan:")
+        print("NIM Beda:", mismatch_details['nim_beda'])
+        print("Nama Beda:", mismatch_details['nama_beda'])
+        print("Tempat Lahir Beda:", mismatch_details['tempat_lahir_beda'])
+        print("Tanggal Lahir Beda:", mismatch_details['tanggal_lahir_beda'])
+
+        return mismatch_details
+
+    except FileNotFoundError:
+        print("File not found error occurred.")
+        return None
+    except Exception as e:
+        print(f"Error while comparing data: {str(e)}")
+        return None 
+      
+@app.route('/pts_bandingkan/<int:id>')
 @login_required
 @pts_required
-def pts_bandingkan():
-    return render_template('user_pts/pts_bandingkan.html', user_name=session.get('user_name'))
+def pts_bandingkan(id):
+    try:
+        print(f"Attempting to compare data for request id: {id}")
+        request_id = id
+        
+        # Ambil data excel dari admin dan user
+        pts_excel_path = get_excel_data(req_id=request_id)
+        admin_excel_path = get_excel_data(request_id=request_id)
+        if admin_excel_path and pts_excel_path:
+            print("Admin Excel Path:", admin_excel_path)
+            print("PTS Excel Path:", pts_excel_path)
 
+            # Lakukan perbandingan data
+            mismatch_details = compare_data(admin_excel_path, pts_excel_path)
+            
+            if mismatch_details is not None:
+                # Simpan hasil di dalam file Excel
+                output_filename = f'mismatch_details_{id}.xlsx'
+                output_path = os.path.join(app.config['EXPORT_FOLDER_PTS'], output_filename)
+                mismatch_df = pd.DataFrame({
+                    'nim_beda': mismatch_details['nim_beda'],
+                    'nama_beda': mismatch_details['nama_beda'],
+                    'tempat_lahir_beda': mismatch_details['tempat_lahir_beda'],
+                    'tanggal_lahir_beda': mismatch_details['tanggal_lahir_beda']
+                })
+                mismatch_df.to_excel(output_path, index=False)
+                
+                # Kirim flash message dan path file
+                flash(f'Data successfully compared! Click OK to download the file.', 'success')
+                return render_template('user_pts/pts_bandingkan.html', user_name=session.get('user_name'), download_path=url_for('download_file', filename=output_filename))
+            else:
+                flash('Tidak ada data yang ditemukan untuk dibandingkan.', 'danger')
+        else:
+            flash('Data tidak ditemukan atau tidak siap.', 'danger')
+    except Exception as e:
+        logging.error(f"Error during comparison: {str(e)}")
+        flash('Terjadi kesalahan saat membandingkan data.', 'danger')
+    
+    return redirect(url_for('pts_verifikasi'))
+
+
+
+@app.route('/download/<path:filename>')
+@login_required
+@pts_required
+def download_file(filename):
+    file_path = os.path.join(app.config['EXPORT_FOLDER_PTS'], filename)
+    return send_file(file_path, as_attachment=True)
 
 # ADMIN ROUTES
 @app.route('/admin_verifikasi')
