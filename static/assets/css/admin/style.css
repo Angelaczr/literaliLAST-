@@ -660,3 +660,37 @@ nav.close ~ .dashboard .top{
     transform: translateY(-50%);
     pointer-events: none; /* Make sure the icon does not block the dropdown interaction */
   }
+
+  .bandingkan-container {
+    margin: 20px;
+  }
+  .pcss3t input[type="radio"] {
+    display: none;
+  }
+  .pcss3t label {
+    cursor: pointer;
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    margin-right: 5px;
+  }
+  .pcss3t input[type="radio"]:checked + label {
+    background: #007bff;
+    color: #fff;
+  }
+  .pcss3t ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+  }
+  .pcss3t .tab-content {
+    display: none;
+  }
+  #tab1:checked ~ ul .tab-content-first,
+  #tab2:checked ~ ul .tab-content-2,
+  #tab3:checked ~ ul .tab-content-3,
+  #tab4:checked ~ ul .tab-content-4,
+  #tab5:checked ~ ul .tab-content-last {
+    display: block;
+  }
+

@@ -105,7 +105,12 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 2 MB
 ALLOWED_EXTENSIONS_PDF = {'pdf'}
 ALLOWED_EXTENSIONS_EXCEL = {'xlsx', 'xls'}
 API_URL = "http://api.e-cher.my.id/user"
+
+#logging
 logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(filename='app.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
 def get_user_role(id_organization_type):
     if id_organization_type == "3":  
         return 'PTS'
@@ -482,10 +487,14 @@ def compare_data(file_path1, file_path2):
             raise FileNotFoundError(f"File not found: {file_path2}")
 
         # Membaca data dari file Excel
-        data_user = pd.read_excel(file_path1)
-        data_admin = pd.read_excel(file_path2)
+        print("Reading data from Excel files...")
+        data_admin = pd.read_excel(file_path1)
+        data_user = pd.read_excel(file_path2)
+        # print('admin',data_admin.columns)
+        # print('user',data_user.columns)
 
         # Mengubah kolom tgl_lahir di kedua dataset menjadi format datetime dan kemudian mengubah format menjadi DD/MM/YY
+        print("Converting birthdate columns to datetime format...")
         data_user['tgl_lahir'] = pd.to_datetime(data_user['tgl_lahir'], errors='coerce').dt.strftime('%d/%m/%Y')
         data_admin['tgl_lahir'] = pd.to_datetime(data_admin['tgl_lahir'], errors='coerce').dt.strftime('%d/%m/%Y')
 
@@ -511,10 +520,15 @@ def compare_data(file_path1, file_path2):
 
         # Inisialisasi dictionary untuk menyimpan hasil verifikasi berdasarkan NIM
         verification_results = {}
+        
+        # Inisialisasi list untuk menyimpan data lulus-valid
+        # lulus_valid_data = []
 
         # Loop untuk mencari dan membandingkan data berdasarkan NIM
+        print("Starting verification and comparison process...")
         for index, row_user in data_user.iterrows():
             nim = row_user['nim']
+            # print(f"Processing user with NIM: {nim}")
             if nim not in verification_results:
                 verification_results[nim] = []
             
@@ -522,7 +536,17 @@ def compare_data(file_path1, file_path2):
             if not row_admin.empty:
                 row_admin = row_admin.iloc[0]
                 verification = verify_and_compare(row_user, row_admin)
+                # print(f"Verification result for NIM {nim}: {verification}")
                 verification_results[nim].append({'verification': verification, 'row_user': row_user, 'row_admin': row_admin})
+            
+            
+                # # print(data_admin.columns)
+                # if row_admin['id_jns_keluar'] == 1 and row_admin['ttl_sks_akt_kuliah'] >= 144:
+                #     row_user['status_lulus'] = 'Lulus-Valid'
+                #     lulus_valid_data.append(row_user)  # Simpan data lulus-valid
+                # else:
+                #     row_user['status_lulus'] = ''
+            
             else:
                 # Search for potential match by other attributes if NIM not found
                 potential_matches = data_admin[
@@ -532,8 +556,10 @@ def compare_data(file_path1, file_path2):
                 ]
                 if not potential_matches.empty:
                     potential_match = potential_matches.iloc[0]
+                    # print(f"Potential match found for user with NIM {nim}: {potential_match['nim']}")
                     verification_results[nim].append({'verification': f"NIM berbeda dengan {potential_match['nim']}", 'row_user': row_user, 'row_admin': potential_match})
                 else:
+                    # print(f"No match found for user with NIM {nim}")
                     verification_results[nim].append({'verification': 'NIM tidak ditemukan di data admin'})
 
         # Inisialisasi dictionary untuk menyimpan kategori mismatch
@@ -545,9 +571,11 @@ def compare_data(file_path1, file_path2):
         }
 
         # Memisahkan hasil verifikasi yang tidak sesuai ke dalam kategori mismatch
+        print("Processing verification results...")
         for nim, results in verification_results.items():
             for result in results:
                 verification = result['verification']
+                # print(f"Verification result details for NIM {nim}: {verification}")
                 if isinstance(verification, dict):
                     for key, value in verification.items():
                         if not value:
@@ -566,9 +594,9 @@ def compare_data(file_path1, file_path2):
                     mismatch_details['nim_beda'].append(nim)
         
         # Menghilangkan duplikasi dari hasil mismatch
+        print("Removing duplicates from mismatch results...")
         mismatch_details['nim_beda'] = list(set(mismatch_details['nim_beda']))
         mismatch_details['nim_beda'] = [item for item in mismatch_details['nim_beda'] if isinstance(item, tuple)]
-        
         mismatch_details['nama_beda'] = list(set(mismatch_details['nama_beda']))
         mismatch_details['tempat_lahir_beda'] = list(set(mismatch_details['tempat_lahir_beda']))
         mismatch_details['tanggal_lahir_beda'] = list(set(mismatch_details['tanggal_lahir_beda']))
@@ -580,15 +608,17 @@ def compare_data(file_path1, file_path2):
         print("Tempat Lahir Beda:", mismatch_details['tempat_lahir_beda'])
         print("Tanggal Lahir Beda:", mismatch_details['tanggal_lahir_beda'])
 
-        return mismatch_details
+        return mismatch_details, data_user
 
-    except FileNotFoundError:
-        print("File not found error occurred.")
+    except FileNotFoundError as fnf_error:
+        print(f"File not found error occurred: {fnf_error}")
+        logging.error("File not found error occurred.")
         return None
     except Exception as e:
         print(f"Error while comparing data: {str(e)}")
-        return None 
-      
+        return None
+  
+   
 @app.route('/pts_bandingkan/<int:id>')
 @login_required
 @pts_required
@@ -598,40 +628,44 @@ def pts_bandingkan(id):
         request_id = id
         
         # Ambil data excel dari admin dan user
-        pts_excel_path = get_excel_data(req_id=request_id)
+        pts_excel_path = get_excel_data(req_id=request_id )
         admin_excel_path = get_excel_data(request_id=request_id)
+        
         if admin_excel_path and pts_excel_path:
             print("Admin Excel Path:", admin_excel_path)
             print("PTS Excel Path:", pts_excel_path)
 
             # Lakukan perbandingan data
-            mismatch_details = compare_data(admin_excel_path, pts_excel_path)
+            mismatch_details, data_user = compare_data(admin_excel_path, pts_excel_path)
             
-            if mismatch_details is not None:
-                # Simpan hasil di dalam file Excel
-                output_filename = f'mismatch_details_{id}.xlsx'
-                output_path = os.path.join(app.config['EXPORT_FOLDER_PTS'], output_filename)
-                mismatch_df = pd.DataFrame({
-                    'nim_beda': mismatch_details['nim_beda'],
-                    'nama_beda': mismatch_details['nama_beda'],
-                    'tempat_lahir_beda': mismatch_details['tempat_lahir_beda'],
-                    'tanggal_lahir_beda': mismatch_details['tanggal_lahir_beda']
-                })
-                mismatch_df.to_excel(output_path, index=False)
-                
-                # Kirim flash message dan path file
-                flash(f'Data successfully compared! Click OK to download the file.', 'success')
-                return render_template('user_pts/pts_bandingkan.html', user_name=session.get('user_name'), download_path=url_for('download_file', filename=output_filename))
-            else:
-                flash('Tidak ada data yang ditemukan untuk dibandingkan.', 'danger')
-        else:
-            flash('Data tidak ditemukan atau tidak siap.', 'danger')
-    except Exception as e:
-        logging.error(f"Error during comparison: {str(e)}")
-        flash('Terjadi kesalahan saat membandingkan data.', 'danger')
-    
-    return redirect(url_for('pts_verifikasi'))
+            # Hanya simpan data mismatch unik
+            mismatch_nims = set()
+            for mismatch in mismatch_details['nim_beda']:
+                mismatch_nims.add(mismatch[0])
+            for mismatch in mismatch_details['nama_beda']:
+                nim = data_user[data_user['nama_mhs'].str.strip() == mismatch[0].strip()]['nim'].values[0]
+                mismatch_nims.add(nim)
+            for mismatch in mismatch_details['tempat_lahir_beda']:
+                nim = data_user[data_user['tempat_lahir'].str.strip() == mismatch[0].strip()]['nim'].values[0]
+                mismatch_nims.add(nim)
+            for mismatch in mismatch_details['tanggal_lahir_beda']:
+                nim = data_user[data_user['tgl_lahir'] == mismatch[0]]['nim'].values[0]
+                mismatch_nims.add(nim)
 
+            # Menghapus duplikat di data_user berdasarkan NIM
+            mismatch_users = data_user[data_user['nim'].isin(mismatch_nims)].drop_duplicates(subset=['nim'])
+      
+            # Return hasil mismatch dan detail data user yang mismatch ke template
+            return render_template('user_pts/pts_data_lapor.html', mismatch_details=mismatch_details, mismatch_users=mismatch_users.to_dict(orient='records'))
+                
+        # Pastikan selalu ada statement return di akhir fungsi, untuk mengembalikan respons valid
+        return render_template('user_pts/eror.html', message="Failed to compare data.")  
+        
+    except Exception as e:
+        # Handle exception
+        print(f"Error: {e}")
+        logging.error("File not found error occurred.")
+        return render_template('user_pts/eror.html', message="Tidak Bisa Memproses Compare. Silahkan Hubungi Admin")  
 
 
 @app.route('/download/<path:filename>')
@@ -640,6 +674,15 @@ def pts_bandingkan(id):
 def download_file(filename):
     file_path = os.path.join(app.config['EXPORT_FOLDER_PTS'], filename)
     return send_file(file_path, as_attachment=True)
+
+
+@app.route('/pts_data_lapor')
+@login_required
+@pts_required
+def pts_data_lapor():
+    return render_template('user_pts/pts_data_lapor.html', user_name=session.get('user_name'))
+
+
 
 # ADMIN ROUTES
 @app.route('/admin_verifikasi')

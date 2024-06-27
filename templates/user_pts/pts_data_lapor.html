@@ -1,0 +1,231 @@
+{% extends 'master/main.html' %} {% block content %}
+
+<div class="activity mx-3">
+  <div class="title mt-2">
+    <i class="uil uil-upload"></i>
+    <span class="text">Data Lapor Terverifikasi</span>
+  </div>
+  <div class="card">
+    <h5>
+      <img
+        src="{{ url_for('static', filename='assets/img/Icon/warning.png') }}"
+        alt="Info Icon"
+      />
+      Informasi
+    </h5>
+    <p>
+      Silahkan periksa terlebih dahulu apakah ada data yang salah atau tidak.
+      Jangan Lupa Untuk Tekan tombol "Unduh" untuk mengunduh file agar
+      tersimpan.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="d-flex justify-content-between mb-2">
+      <h5></h5>
+      <div>
+        <button type="button" class="btn btn-primary">Donwload Excel</button>
+      </div>
+    </div>
+
+    <div class="bandingkan-container">
+      <div class="pcss3t pcss3t-effect-scale pcss3t-theme-1">
+        <input
+          type="radio"
+          name="pcss3t"
+          checked
+          id="tab1"
+          class="tab-content-first"
+        />
+        <label for="tab1">Nama Berbeda</label>
+
+        <input type="radio" name="pcss3t" id="tab2" class="tab-content-2" />
+        <label for="tab2">NIM Berbeda</label>
+
+        <input type="radio" name="pcss3t" id="tab3" class="tab-content-3" />
+        <label for="tab3">Tempat Lahir Berbeda</label>
+
+        <input type="radio" name="pcss3t" id="tab4" class="tab-content-4" />
+        <label for="tab4">Tanggal Lahir Berbeda</label>
+
+        <input type="radio" name="pcss3t" id="tab5" class="tab-content-last" />
+        <label for="tab5">Lulus Valid</label>
+
+        <ul>
+          <li class="tab-content tab-content-first typography">
+            <!-- Konten untuk tab 1 -->
+            <h2>Nama Berbeda</h2>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Data Lapor</th>
+                    <th>Laman PDDikti</th>
+                    <th>NIM</th>
+                    <th>Tempat Lahir</th>
+                    <th>Tanggal Lahir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for old_name, new_name in mismatch_details['nama_beda'] %}
+                  <tr>
+                    <td>{{loop.index}}</td>
+                    <td>{{ old_name }}</td>
+                    <td>{{ new_name }}</td>
+                    {% for user in mismatch_users %} 
+                    {% if  user['nama_mhs'].strip() == old_name.strip() %}
+                    <td>{{ user['nim'] }}</td>
+                    <td>{{ user['tempat_lahir'] }}</td>
+                    <td>{{ user['tgl_lahir'] }}</td>
+                    {% endif %} {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </li>
+          <li class="tab-content tab-content-2 typography">
+            <!-- Konten untuk tab 2 -->
+            <h2>NIM Berbeda</h2>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Data Lapor</th>
+                    <th>Laman PDDikti</th>
+                    <th>Nama</th>
+                    <th>Tempat Lahir</th>
+                    <th>Tanggal Lahir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for old_nim, new_nim in mismatch_details['nim_beda'] %}
+                  <tr>
+                    <td>{{loop.index}}</td>
+                    <td>{{ old_nim }}</td>
+                    <td>{{ new_nim }}</td>
+                    {% for user in mismatch_users %} {% if user['nim'] == old_nim %}
+                    <td>{{ user['nama_mhs'] }}</td>
+                    <td>{{ user['tempat_lahir'] }}</td>
+                    <td>{{ user['tgl_lahir'] }}</td>
+                    {% endif %} {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </li>
+          <li class="tab-content tab-content-3 typography">
+            <!-- Konten untuk tab 3 -->
+            <h2>Tempat Lahir Berbeda</h2>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Data Lapor</th>
+                    <th>Laman PDDikti</th>
+                    <th>Nama</th>
+                    <th>NIM</th>
+                    <th>Tanggal Lahir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for old_place, new_place in
+                  mismatch_details['tempat_lahir_beda'] %}
+                  <tr>
+                    <td>{{loop.index}}</td>
+                    <td>{{ old_place }}</td>
+                    <td>{{ new_place }}</td>
+                    {% for user in mismatch_users %} 
+         
+                    {% if user['tempat_lahir'].strip() == old_place.strip() %}
+                    <td>{{ user['nama_mhs'] }}</td>
+                    <td>{{ user['nim'] }}</td>
+                    <td>{{ user['tgl_lahir'] }}</td>
+                    {% endif %} {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </li>
+          <li class="tab-content tab-content-4 typography">
+            <!-- Konten untuk tab 4 -->
+            <h2>Tanggal Lahir Berbeda</h2>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Data Lapor</th>
+                    <th>Laman PDDikti</th>
+                    <th>Nama</th>
+                    <th>NIM</th>
+                    <th>Tempat Lahir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for old_dob, new_dob in
+                  mismatch_details['tanggal_lahir_beda'] %}
+                  <tr>
+                    <td>{{loop.index}}</td>
+                    <td>{{ old_dob }}</td>
+                    <td>{{ new_dob }}</td>
+                    {% for user in mismatch_users %} 
+                    {% if user['tgl_lahir'] ==  old_dob %}
+                    <td>{{ user['nama_mhs'] }}</td>
+                    <td>{{ user['nim'] }}</td>
+                    <td>{{ user['tempat_lahir'] }}</td>
+                    {% endif %} {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </li>
+          <li class="tab-content tab-content-last typography">
+            <!-- Konten untuk tab 5 -->
+            <h2>Lulus-Valid</h2>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>NIM</th>
+                    <th>Tempat Lahir</th>
+                    <th>Tanggal Lahir</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    {% if lulus_valid_data %}
+                        {% for index, user in enumerate(lulus_valid_data) %}
+                            <tr>
+                                <td>{{ index + 1 }}</td>
+                                <td>{{ user['nama_mhs'] }}</td>
+                                <td>{{ user['nim'] }}</td>
+                                <td>{{ user['tempat_lahir'] }}</td>
+                                <td>{{ user['tgl_lahir'] }}</td>
+                                <td>{{ user['status_lulus'] }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6">Tidak ada data lulus-valid yang ditemukan.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    {% endblock %}
+  </div>
+</div>
