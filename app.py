@@ -1,5 +1,4 @@
 from flask import Flask, render_template, jsonify, current_app, g, send_file, session, request, redirect, url_for, flash, Response
-import io
 import requests
 from requests.exceptions import ConnectionError, Timeout
 import time
@@ -104,7 +103,7 @@ def allowed_file(filename, allowed_extensions):
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 2 MB
 ALLOWED_EXTENSIONS_PDF = {'pdf'}
 ALLOWED_EXTENSIONS_EXCEL = {'xlsx', 'xls'}
-API_URL = "http://api.e-cher.my.id/user"
+API_URL = "https://calonapi.e-cher.my.id/user"
 
 #logging
 logging.basicConfig(level=logging.DEBUG)
